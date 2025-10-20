@@ -3,7 +3,11 @@ package main
 import (
 	"log"
 
+	"github.com/Jack-samu/the-blog-backend-gin.git/internal/handler"
+	"github.com/Jack-samu/the-blog-backend-gin.git/internal/middleware"
 	"github.com/Jack-samu/the-blog-backend-gin.git/internal/models"
+	"github.com/Jack-samu/the-blog-backend-gin.git/internal/repositories"
+	"github.com/Jack-samu/the-blog-backend-gin.git/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -16,6 +20,23 @@ func main() {
 		log.Fatal("读取.env失败")
 	}
 
-	_ = models.InitDB()
+	db := models.InitDB()
+	repository := repositories.NewRepository(db)
+	service := service.NewService(repository)
+	handler := handler.NewHandler(service)
+
+	// 路由注册
+	r.POST("/upload-img", handler.UploadImg)
+	auth := r.Group("/auth")
+	{
+		auth.POST("/register", handler.Register)
+	}
+
+	protected := r.Group("/")
+	protected.Use(middleware.Auth())
+	{
+		protected.POST("logout", handler.Logout)
+	}
+
 	r.Run()
 }

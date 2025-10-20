@@ -15,6 +15,7 @@ type User struct {
 	Bio           string
 	CreatedAt     time.Time `gorm:"autoUpdateTime:false"`
 	UpdatedAt     time.Time `gorm:"autoUpdateTime:milli"`
+	LastActivity  time.Time `gorm:"autoUpdateTime:false"`
 	FailedLogin   int
 	CaptchaReqCnt int
 
