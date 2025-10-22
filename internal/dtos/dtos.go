@@ -40,3 +40,19 @@ type RefreshResp struct {
 	Token    string    `json:"token"`
 	UserInfo *UserInfo `json:"userInfo"`
 }
+
+type ProfileResp struct {
+	ID       string `json:"id"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Articles int64  `json:"articleCount"`
+	Drafts   int64  `json:"draftCount"`
+	Avatar   string `json:"avatar"`
+}
+
+type PhotosResp struct {
+	Photos []struct {
+		ID  uint   `json:"id"`
+		Img string `json:"name"`
+	}
+}

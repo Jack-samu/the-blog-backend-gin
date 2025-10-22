@@ -22,8 +22,13 @@ func (r *Repository) CreateUser(u *models.User) error {
 	return r.db.Create(u).Error
 }
 
-func (r *Repository) AddAvatar(u *models.User, img *models.Img) error {
-	img.UserID = u.ID
+func (r *Repository) AddAvatar(u *models.User, filename string) error {
+	img := &models.Img{
+		Name:      filename,
+		IsAvatar:  true,
+		UserID:    u.ID,
+		CreatedAt: time.Now(),
+	}
 	return r.db.Create(img).Error
 }
 
@@ -101,4 +106,37 @@ func (r *Repository) GetUserByIdWithAvatar(id string) (*models.User, string, err
 func (r *Repository) IncreaseCaptchaCnt(u *models.User) error {
 	u.CaptchaReqCnt = u.CaptchaReqCnt + 1
 	return r.db.Save(u).Error
+}
+
+func (r *Repository) GetUserDrafts(id string) (int64, error) {
+	var drafts int64
+	err := r.db.Model(&models.Draft{}).Where("user_id = ?", id).Count(&drafts).Error
+	return drafts, err
+}
+
+func (r *Repository) GetUserPhotos(id string) ([]models.Img, error) {
+	var imgs []models.Img
+	err := r.db.Model(&models.Img{}).Where("user_id = ?", id).Find(&imgs).Error
+	return imgs, err
+}
+
+func (r *Repository) GetPhoto(id uint) (*models.Img, error) {
+	img := &models.Img{}
+	err := r.db.Where("id = ?", id).First(&img).Error
+	return img, err
+}
+
+func (r *Repository) SaveImgWithUser(userID, filename string) error {
+
+	img := &models.Img{
+		Name:   filename,
+		UserID: userID,
+	}
+	err := r.db.Create(img).Error
+
+	return err
+}
+
+func (r *Repository) DeleteImg(id uint) error {
+	return r.db.Delete("id = ?", id).Error
 }

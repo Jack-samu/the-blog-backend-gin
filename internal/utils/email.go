@@ -3,6 +3,8 @@ package utils
 import (
 	"crypto/tls"
 	"fmt"
+	"os"
+	"strconv"
 
 	"gopkg.in/gomail.v2"
 )
@@ -16,20 +18,21 @@ type EmailConfig struct {
 
 var e EmailConfig
 
-func InitEmailConfig(host string, port int, username, password string) {
+func InitEmailConfig() {
+	port, _ := strconv.Atoi(os.Getenv("MAIL_PORT"))
 	e = EmailConfig{
-		Host:     host,
+		Host:     os.Getenv("MAIL_SERVER"),
 		Port:     port,
-		Username: username,
-		Password: password,
+		Username: os.Getenv("MAIL_USERNAME"),
+		Password: os.Getenv("MAIL_PASSWORD"),
 	}
 }
 
-func sendEmail(to, body string) error {
+func sendEmail(to, body, subject string) error {
 	m := gomail.NewMessage()
 	m.SetHeader("From", e.Username)
 	m.SetHeader("To", to)
-	m.SetHeader("Subject", "密码重置邮件")
+	m.SetHeader("Subject", subject)
 
 	m.SetBody("text/html", body)
 	d := gomail.NewDialer(e.Host, e.Port, e.Username, e.Password)
@@ -53,7 +56,7 @@ func SendResetLink(to, resetToken string) error {
 		</html>
 	`, resetLink)
 
-	return sendEmail(to, body)
+	return sendEmail(to, body, "密码重置邮件")
 }
 
 func SendCaptcha(to, captcha string) error {
@@ -67,5 +70,5 @@ func SendCaptcha(to, captcha string) error {
 		</html>
 	`, captcha, captcha)
 
-	return sendEmail(to, body)
+	return sendEmail(to, body, "身份校验邮件")
 }

@@ -3,7 +3,7 @@ package handler
 import (
 	"log"
 	"net/http"
-	"time"
+	"strconv"
 
 	"github.com/Jack-samu/the-blog-backend-gin.git/internal/dtos"
 	"github.com/Jack-samu/the-blog-backend-gin.git/internal/utils"
@@ -25,11 +25,11 @@ func (h *Handler) Register(c *gin.Context) {
 		switch err.Code {
 		case 400:
 			c.JSON(http.StatusBadRequest, gin.H{
-				"err": err.Msg + " " + err.Err.Error(),
+				"err": err.Msg,
 			})
 		case 500:
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"err": err.Msg,
+				"err": err.Msg + err.Err.Error(),
 			})
 		}
 	} else {
@@ -39,7 +39,7 @@ func (h *Handler) Register(c *gin.Context) {
 	}
 }
 
-func (h *Handler) UploadImg(c *gin.Context) {
+func (h *Handler) UploadImage(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -68,7 +68,7 @@ func (h *Handler) UploadImg(c *gin.Context) {
 			})
 		case 500:
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"err": errs.Msg,
+				"err": errs.Msg + errs.Err.Error(),
 			})
 		}
 	} else {
@@ -99,7 +99,7 @@ func (h *Handler) Login(c *gin.Context) {
 			})
 		case 500:
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"err": errs.Msg,
+				"err": errs.Msg + errs.Err.Error(),
 			})
 		}
 	} else {
@@ -202,20 +202,10 @@ func (h *Handler) VerifyCaptcha(c *gin.Context) {
 
 func (h *Handler) ResetPassword(c *gin.Context) {
 	token := c.Param("token")
+
 	payload, err := utils.ParseToken(token)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"err": "token解析失败，请重新访问"})
-		return
-	}
-
-	val, ok := payload["sub"].(time.Time)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"err": "token校验失败，请重新访问"})
-		return
-	}
-
-	if time.Now().After(val) {
-		c.JSON(http.StatusBadRequest, gin.H{"err": "token已过期失效，请重新请求验证码进行校验"})
+		c.JSON(http.StatusInternalServerError, gin.H{"err": "token无效或者已过期"})
 		return
 	}
 
@@ -236,13 +226,7 @@ func (h *Handler) ResetPassword(c *gin.Context) {
 			return
 		}
 
-		id, ok := payload["sub"].(string)
-		if !ok {
-			c.JSON(http.StatusInternalServerError, gin.H{"err": "服务器出了点问题"})
-			return
-		}
-
-		err := h.s.Reset(id, password)
+		err := h.s.Reset(payload.ID, password)
 		if err != nil {
 			switch err.Code {
 			case http.StatusBadRequest:
@@ -253,5 +237,165 @@ func (h *Handler) ResetPassword(c *gin.Context) {
 		} else {
 			c.JSON(http.StatusOK, gin.H{"msg": "密码已重置"})
 		}
+	}
+}
+
+func (h *Handler) Profile(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		log.Printf("获取用户信息的请求中id为'%s'\n", id)
+		c.JSON(http.StatusBadRequest, gin.H{"err": "缺少id参数，检查路由"})
+		return
+	}
+
+	profileResp, err := h.s.Profile(id)
+	if err != nil {
+		switch err.Code {
+		case http.StatusBadRequest:
+			c.JSON(http.StatusBadRequest, gin.H{"err": err.Msg})
+		case http.StatusInternalServerError:
+			c.JSON(http.StatusInternalServerError, gin.H{"err": err.Err.Error()})
+		}
+	} else {
+		c.JSON(http.StatusOK, profileResp)
+	}
+}
+
+func (h *Handler) GetPhotos(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		log.Printf("获取用户信息的请求中id为'%s'\n", id)
+		c.JSON(http.StatusBadRequest, gin.H{"err": "缺少id参数，检查路由"})
+		return
+	}
+
+	photosResp, err := h.s.GetPhotos(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"err": err.Err.Error()})
+	} else {
+		c.JSON(http.StatusOK, photosResp)
+	}
+}
+
+func (h *Handler) DeleteImg(c *gin.Context) {
+	id := c.Param("id")
+	user_id := c.GetString("user_id")
+
+	if id == "" {
+		log.Printf("获取用户信息的请求中id为'%s'\n", id)
+		c.JSON(http.StatusBadRequest, gin.H{"err": "缺少id参数，检查路由"})
+		return
+	}
+
+	id_num, err := strconv.ParseUint(id, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"err": "服务器错误"})
+		return
+	}
+
+	errs := h.s.DeleteImg(uint(id_num), user_id)
+	if errs != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"err": errs.Err.Error()})
+	} else {
+		c.JSON(http.StatusAccepted, gin.H{"msg": "文件已删除"})
+	}
+}
+
+func (h *Handler) SetAvatar(c *gin.Context) {
+	user_id, ok := c.Get("user_id")
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"err": "用户认证环节出错"})
+	}
+
+	val, ok := user_id.(string)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"err": "用户状态信息查询出错，请重试"})
+	}
+
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"err": "image part not found.",
+		})
+		return
+	}
+
+	imageType := c.PostForm("type")
+	log.Printf("debug，%v\n", imageType)
+	if imageType != "" {
+		if !h.s.TypeAllow(imageType) {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"err": "仅支持PNG/JPG/JPEG/GIF格式",
+			})
+			return
+		}
+	}
+
+	filename, errs := h.s.SetAvatar(file, imageType, "images", val)
+	if errs != nil {
+		switch errs.Code {
+		case 400:
+			c.JSON(http.StatusBadRequest, gin.H{
+				"err": errs.Msg,
+			})
+		case 500:
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"err": errs.Msg + errs.Err.Error(),
+			})
+		}
+	} else {
+		c.JSON(http.StatusCreated, gin.H{
+			"filename": filename,
+		})
+	}
+}
+
+// UploadImage的路由保护版
+func (h *Handler) UploadImg(c *gin.Context) {
+	user_id, ok := c.Get("user_id")
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"err": "用户认证环节出错"})
+	}
+
+	val, ok := user_id.(string)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"err": "用户状态信息查询出错，请重试"})
+	}
+
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"err": "image part not found.",
+		})
+		return
+	}
+
+	imageType := c.PostForm("type")
+	log.Printf("debug，%v\n", imageType)
+	if imageType != "" {
+		if !h.s.TypeAllow(imageType) {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"err": "仅支持PNG/JPG/JPEG/GIF格式",
+			})
+			return
+		}
+	}
+
+	filename, errs := h.s.SaveImgWithUser(file, imageType, "images", val)
+	if errs != nil {
+		switch errs.Code {
+		case 400:
+			c.JSON(http.StatusBadRequest, gin.H{
+				"err": errs.Msg,
+			})
+		case 500:
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"err": errs.Msg + errs.Err.Error(),
+			})
+		}
+	} else {
+		c.JSON(http.StatusCreated, gin.H{
+			"filename": filename,
+		})
 	}
 }

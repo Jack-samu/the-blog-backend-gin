@@ -3,7 +3,6 @@ package middleware
 import (
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/Jack-samu/the-blog-backend-gin.git/internal/utils"
 	"github.com/gin-gonic/gin"
@@ -27,25 +26,12 @@ func Auth() gin.HandlerFunc {
 
 		payload, err := utils.ParseToken(parts[1])
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"err": "token无效"})
+			c.JSON(http.StatusUnauthorized, gin.H{"err": "token无效或者已过期"})
 			c.Abort()
 			return
 		}
 
-		// token是否过期检查
-		exp, ok := payload["exp"].(time.Time)
-		if !ok {
-			c.JSON(http.StatusInternalServerError, gin.H{"err": "token信息提取失败"})
-			c.Abort()
-			return
-		}
-		if exp.Before(time.Now()) {
-			c.JSON(http.StatusUnauthorized, gin.H{"err": "token已失效"})
-			c.Abort()
-			return
-		}
-
-		c.Set("user_id", payload["id"])
+		c.Set("user_id", payload.ID)
 		c.Next()
 	}
 }
