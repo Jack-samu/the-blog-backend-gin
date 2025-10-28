@@ -23,7 +23,7 @@ func InitDB() *gorm.DB {
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 
 	if err != nil {
-		log.Fatalf("数据库句柄创建失败，%v\n", err)
+		log.Fatalf("数据库句柄创建失败，%s\n", err.Error())
 	}
 
 	// 数据库迁移

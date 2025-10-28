@@ -1,9 +1,10 @@
-package utils
+package utils_test
 
 import (
 	"os"
 	"testing"
 
+	"github.com/Jack-samu/the-blog-backend-gin.git/internal/utils"
 	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 )
@@ -11,11 +12,11 @@ import (
 func TestSendEmail(t *testing.T) {
 	err := godotenv.Load("../../.env")
 	assert.NoError(t, err)
-	InitEmailConfig()
+	utils.InitEmailConfig()
 
 	to := os.Getenv("TEST_MAIN")
 	t.Logf("测试目标：%s\n", to)
 
-	err = sendEmail(to, "test测试测测测", "测试邮件")
+	err = utils.SendCaptcha(to, "测试邮件")
 	assert.NoError(t, err)
 }

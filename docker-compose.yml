@@ -16,7 +16,7 @@ services:
     volumes:
       - $PWD/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
-      - "${MYSQL_PORT}:3306"
+      - "${DB_PORT}:3306"
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p${MYSQL_ROOT_PWD}"]
       interval: 10s

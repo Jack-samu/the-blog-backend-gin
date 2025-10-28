@@ -68,7 +68,7 @@ func (h *Handler) UploadImage(c *gin.Context) {
 			})
 		case 500:
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"err": errs.Msg + errs.Err.Error(),
+				"err": errs.Msg,
 			})
 		}
 	} else {
@@ -340,7 +340,7 @@ func (h *Handler) SetAvatar(c *gin.Context) {
 			})
 		case 500:
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"err": errs.Msg + errs.Err.Error(),
+				"err": errs.Msg,
 			})
 		}
 	} else {
@@ -390,7 +390,7 @@ func (h *Handler) UploadImg(c *gin.Context) {
 			})
 		case 500:
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"err": errs.Msg + errs.Err.Error(),
+				"err": errs.Msg,
 			})
 		}
 	} else {

@@ -1,12 +1,10 @@
-//go:build test
-// +build test
-
-package utils
+package utils_test
 
 import (
 	"testing"
 	"time"
 
+	"github.com/Jack-samu/the-blog-backend-gin.git/internal/utils"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -41,7 +39,7 @@ func TestGenerateToken(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			token, err := GenerateToken(tt.userID, tt.duration)
+			token, err := utils.GenerateToken(tt.userID, tt.duration)
 
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -50,7 +48,7 @@ func TestGenerateToken(t *testing.T) {
 				assert.NotEmpty(t, token)
 
 				// token解析
-				payload, err := ParseToken(token)
+				payload, err := utils.ParseToken(token)
 				assert.NoError(t, err)
 				assert.Equal(t, tt.userID, payload.ID)
 			}
@@ -60,7 +58,7 @@ func TestGenerateToken(t *testing.T) {
 
 func TestParseToken(t *testing.T) {
 	userID := "test-123-id"
-	token, err := GenerateToken(userID, time.Hour)
+	token, err := utils.GenerateToken(userID, time.Hour)
 	assert.NoError(t, err)
 
 	tests := []struct {
@@ -87,12 +85,11 @@ func TestParseToken(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			payload, err := ParseToken(tt.tokenString)
+			payload, err := utils.ParseToken(tt.tokenString)
 
 			if tt.wantErr {
 				assert.Error(t, err)
 				assert.Nil(t, payload)
-				t.Errorf("具体错误：%s\n", err.Error())
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, payload)
@@ -104,10 +101,10 @@ func TestParseToken(t *testing.T) {
 
 func TestExpiredToken(t *testing.T) {
 	id := uuid.NewString()
-	token, err := GenerateToken(id, -time.Hour)
+	token, err := utils.GenerateToken(id, -time.Hour)
 	assert.NoError(t, err)
 
-	payload, err := ParseToken(token)
+	payload, err := utils.ParseToken(token)
 	assert.Error(t, err)
 	assert.Nil(t, payload)
 }
@@ -115,15 +112,15 @@ func TestExpiredToken(t *testing.T) {
 // 基准测试
 func BenchmarkGenerateToken(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		GenerateToken("bench-user", time.Hour)
+		utils.GenerateToken("bench-user", time.Hour)
 	}
 }
 
 func BenchmarkParseToken(b *testing.B) {
-	token, _ := GenerateToken("bench-user", time.Hour)
+	token, _ := utils.GenerateToken("bench-user", time.Hour)
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		ParseToken(token)
+		utils.ParseToken(token)
 	}
 }

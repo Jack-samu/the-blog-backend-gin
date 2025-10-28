@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 var secretKey = []byte("blog-back")
@@ -18,6 +19,7 @@ func GenerateToken(userID string, t time.Duration) (string, error) {
 	payload := &Payload{
 		ID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        uuid.NewString(), // 加个唯一标识
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(t)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
@@ -26,9 +28,10 @@ func GenerateToken(userID string, t time.Duration) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
-	log.Printf("用户'%s'token生成：%v\n", userID, token)
+	tokenString, err := token.SignedString(secretKey)
+	log.Printf("用户'%s'token生成：%s\n", userID, tokenString)
 
-	return token.SignedString(secretKey)
+	return tokenString, err
 }
 
 func ParseToken(tokenString string) (*Payload, error) {

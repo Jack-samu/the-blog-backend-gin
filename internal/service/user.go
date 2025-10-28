@@ -19,7 +19,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// 用户查询和创建的调度处理
 func (s *Service) Register(username, email, password, bio, avatar string) *errs.ErrorResp {
 	exists, err := s.r.ExistByEmail(email)
 	if err != nil {
@@ -66,7 +65,7 @@ func (s *Service) Register(username, email, password, bio, avatar string) *errs.
 
 	if avatar != "" {
 		// 添加头像的注册
-		if err = s.r.AddAvatar(user, avatar); err != nil {
+		if err = s.r.SaveImg(avatar, user.ID, true); err != nil {
 			log.Printf("头像添加出错：%s\n", err.Error())
 			return errs.NewError(http.StatusInternalServerError, "用户注册失败", err)
 		}
@@ -80,7 +79,7 @@ func (s *Service) Login(username, password string) (*dtos.LoginResp, *errs.Error
 
 	// 用户查询
 	user, avatar, err := s.r.GetUserByNameWithAvatar(username)
-	if err != nil {
+	if err != nil && user == nil {
 		log.Printf("用户查询出错：%s\n", err.Error())
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errs.NewError(http.StatusBadRequest, "用户不存在", nil)
@@ -136,8 +135,8 @@ func (s *Service) Login(username, password string) (*dtos.LoginResp, *errs.Error
 
 func (s *Service) RefreshTheToken(id string) (*dtos.RefreshResp, *errs.ErrorResp) {
 	// 查询用户是否存在
-	user, avatar, err := s.r.GetUserByNameWithAvatar(id)
-	if err != nil {
+	user, avatar, err := s.r.GetUserByIdWithAvatar(id)
+	if err != nil && user == nil {
 		log.Printf("用户查询出错：%s\n", err.Error())
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errs.NewError(http.StatusBadRequest, "用户不存在", nil)
@@ -310,92 +309,12 @@ func (s *Service) Logout(id string) (string, *errs.ErrorResp) {
 	return last_activity, nil
 }
 
-func (s *Service) UploadImg(file *multipart.FileHeader, imageType, uploadPath string) (string, *errs.ErrorResp) {
-	mimetype := file.Header.Get("Content-type")
-	ext := filepath.Ext(file.Filename)
-	log.Println("debug，", mimetype, ext)
-	if !s.TypeAllow(mimetype) {
-		log.Println("仅支持PNG/JPG/JPEG/GIF格式")
-		return "", errs.NewError(http.StatusBadRequest, "仅支持PNG/JPG/JPEG/GIF格式", nil)
-	}
-
-	// 大小控制，后续再来添加类型方面的大小控制吧
-	if file.Size > 10*1024*1024 {
-		log.Println("超过最大可承受范围啦，吊毛")
-		return "", errs.NewError(http.StatusBadRequest, "超过最大可承受范围啦，吊毛", nil)
-	}
-
-	if ext == "" {
-		switch mimetype {
-		case "image/png":
-			ext = ".png"
-		case "image/jpg":
-			ext = ".jpg"
-		case "image/jpeg":
-			ext = ".jpeg"
-		case "image/gif":
-			ext = ".gif"
-		default:
-			return "", errs.NewError(http.StatusBadRequest, "不支持的图片格式", nil)
-		}
-	}
-
-	filename := uuid.NewString() + strings.ToLower(ext)
-	dst := filepath.Join(uploadPath, filename)
-
-	if err := os.MkdirAll(uploadPath, 0755); err != nil {
-		log.Printf("文件保存失败：%s\n", err.Error())
-		return "", errs.NewError(http.StatusInternalServerError, "文件保存失败，图片文件夹不存在", err)
-	}
-
-	if err := s.SaveImg(file, dst); err != nil {
-		return "", errs.NewError(http.StatusInternalServerError, "文件保存失败", err)
-	}
-
-	return filename, nil
-}
-
-func (s *Service) TypeAllow(mimetype string) bool {
-	lower_mime := strings.ToLower(mimetype)
-	types := map[string]bool{
-		"image/png":  true,
-		"image/jpg":  true,
-		"image/jpeg": true,
-		"image/gif":  true,
-	}
-	return types[lower_mime]
-}
-
-// 只进行图片的本地文件保存动作
-func (s *Service) SaveImg(f *multipart.FileHeader, filename string) error {
-	src, err := f.Open()
-	if err != nil {
-		log.Printf("文件句柄打开失败：%s\n", err.Error())
-		return err
-	}
-	defer src.Close()
-
-	out, err := os.Create(filename)
-	if err != nil {
-		log.Printf("文件创建失败：%s\n", err.Error())
-		return err
-	}
-	defer out.Close()
-
-	_, err = io.Copy(out, src)
-	if err != nil {
-		log.Printf("图片数据传输失败：%s\n", err.Error())
-	}
-
-	return err
-}
-
 func (s *Service) Profile(id string) (*dtos.ProfileResp, *errs.ErrorResp) {
 	user, avatar, err := s.r.GetUserByIdWithAvatar(id)
-	if err != nil {
-		log.Printf("用户信息查询报错：%s\n", err.Error())
+	if err != nil && user == nil {
+		log.Printf("用户查询出错：%s\n", err.Error())
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errs.NewError(http.StatusBadRequest, "没有该用户", nil)
+			return nil, errs.NewError(http.StatusBadRequest, "用户不存在", nil)
 		}
 		return nil, errs.NewError(http.StatusInternalServerError, "用户查询出错", err)
 	}
@@ -429,72 +348,78 @@ func (s *Service) GetPhotos(id string) (*dtos.PhotosResp, *errs.ErrorResp) {
 		return nil, errs.NewError(http.StatusInternalServerError, "", err)
 	}
 
-	photos := dtos.PhotosResp{
-		Photos: make([]struct {
-			ID  uint   `json:"id"`
-			Img string `json:"name"`
-		}, len(imgs)),
+	resp := &dtos.PhotosResp{
+		Photos: make([]dtos.PhotoItem, 0, len(imgs)),
 	}
 
-	for i, ii := range imgs {
-		photos.Photos[i] = struct {
-			ID  uint   `json:"id"`
-			Img string `json:"name"`
-		}{
-			ID:  ii.ID,
-			Img: ii.Name,
-		}
+	for _, img := range imgs {
+		resp.Photos = append(resp.Photos, dtos.PhotoItem{
+			ID:  img.ID,
+			Img: img.Name,
+		})
 	}
 
-	return &photos, nil
+	return resp, nil
 }
 
+// 注册后图片上传
 func (s *Service) SaveImgWithUser(file *multipart.FileHeader, imageType, uploadPath, userID string) (string, *errs.ErrorResp) {
-	mimetype := file.Header.Get("Content-type")
-	ext := filepath.Ext(file.Filename)
-	log.Println("debug，", mimetype, ext)
-	if !s.TypeAllow(mimetype) {
-		log.Println("仅支持PNG/JPG/JPEG/GIF格式")
-		return "", errs.NewError(http.StatusBadRequest, "仅支持PNG/JPG/JPEG/GIF格式", nil)
+
+	ext, err := s.ImageParaInspection(file, imageType)
+	if err != nil {
+		return "", err
 	}
 
-	// 大小控制，后续再来添加类型方面的大小控制吧
-	if file.Size > 10*1024*1024 {
-		log.Println("超过最大可承受范围啦，吊毛")
-		return "", errs.NewError(http.StatusBadRequest, "超过最大可承受范围啦，吊毛", nil)
-	}
-
-	if ext == "" {
-		switch mimetype {
-		case "image/png":
-			ext = ".png"
-		case "image/jpg":
-			ext = ".jpg"
-		case "image/jpeg":
-			ext = ".jpeg"
-		case "image/gif":
-			ext = ".gif"
-		default:
-			return "", errs.NewError(http.StatusBadRequest, "不支持的图片格式", nil)
-		}
-	}
-
-	filename := uuid.NewString() + strings.ToLower(ext)
-	dst := filepath.Join(uploadPath, filename)
-
-	if err := os.MkdirAll(uploadPath, 0755); err != nil {
-		log.Printf("文件保存失败：%s\n", err.Error())
-		return "", errs.NewError(http.StatusInternalServerError, "文件保存失败，图片文件夹不存在", err)
-	}
-
-	if err := s.SaveImg(file, dst); err != nil {
-		return "", errs.NewError(http.StatusInternalServerError, "文件保存失败", err)
+	filename, err := s.SaveImg(file, ext, uploadPath)
+	if err != nil {
+		return "", err
 	}
 
 	// 添加数据库存储
-	err := s.r.SaveImgWithUser(userID, filename)
-	if err != nil {
+	if err := s.r.SaveImg(filename, userID, false); err != nil {
 		return "", errs.NewError(http.StatusInternalServerError, "图片存储失败", err)
+	}
+
+	return filename, nil
+}
+
+// 注册前头像上传
+func (s *Service) UploadImg(file *multipart.FileHeader, imageType, uploadPath string) (string, *errs.ErrorResp) {
+
+	ext, err := s.ImageParaInspection(file, imageType)
+	if err != nil {
+		return "", err
+	}
+
+	filename, err := s.SaveImg(file, ext, uploadPath)
+	if err != nil {
+		return "", err
+	}
+
+	return filename, nil
+}
+
+// 头像设置动作，后续可能修改为将已传入并存储的图片为头像
+func (s *Service) SetAvatar(file *multipart.FileHeader, imageType, uploadPath, userID string) (string, *errs.ErrorResp) {
+
+	ext, err := s.ImageParaInspection(file, imageType)
+	if err != nil {
+		return "", err
+	}
+
+	filename, err := s.SaveImg(file, ext, uploadPath)
+	if err != nil {
+		return "", err
+	}
+
+	if user, err := s.r.GetUserById(userID); err != nil {
+		log.Printf("用户查询不能：%s\n", err.Error())
+		return "", errs.NewError(http.StatusBadRequest, "用户无法查询", nil)
+	} else {
+		if err := s.r.SaveImg(filename, user.ID, true); err != nil {
+			log.Printf("图片信息数据库存储失败：%s\n", err.Error())
+			return "", errs.NewError(http.StatusInternalServerError, "图片存储失败", nil)
+		}
 	}
 
 	return filename, nil
@@ -519,7 +444,7 @@ func (s *Service) DeleteImg(id uint, userID string) *errs.ErrorResp {
 	return nil
 }
 
-func (s *Service) SetAvatar(file *multipart.FileHeader, imageType, uploadPath, userID string) (string, *errs.ErrorResp) {
+func (s *Service) ImageParaInspection(file *multipart.FileHeader, imageType string) (string, *errs.ErrorResp) {
 	mimetype := file.Header.Get("Content-type")
 	ext := filepath.Ext(file.Filename)
 	log.Println("debug，", mimetype, ext)
@@ -549,27 +474,50 @@ func (s *Service) SetAvatar(file *multipart.FileHeader, imageType, uploadPath, u
 		}
 	}
 
+	return ext, nil
+}
+
+func (s *Service) TypeAllow(mimetype string) bool {
+	lower_mime := strings.ToLower(mimetype)
+	types := map[string]bool{
+		"image/png":  true,
+		"image/jpg":  true,
+		"image/jpeg": true,
+		"image/gif":  true,
+	}
+	return types[lower_mime]
+}
+
+// 图片保存本地的实际动作
+func (s *Service) SaveImg(f *multipart.FileHeader, ext, uploadPath string) (string, *errs.ErrorResp) {
+
 	filename := uuid.NewString() + strings.ToLower(ext)
 	dst := filepath.Join(uploadPath, filename)
 
+	// 文件夹检查
 	if err := os.MkdirAll(uploadPath, 0755); err != nil {
 		log.Printf("文件保存失败：%s\n", err.Error())
-		return "", errs.NewError(http.StatusInternalServerError, "文件保存失败，图片文件夹不存在", err)
+		return "", errs.NewError(http.StatusInternalServerError, "图片文件夹不存在", nil)
 	}
 
-	if err := s.SaveImg(file, dst); err != nil {
-		return "", errs.NewError(http.StatusInternalServerError, "文件保存失败", err)
-	}
-
-	user, err := s.r.GetUserById(userID)
+	src, err := f.Open()
 	if err != nil {
-		return "", errs.NewError(http.StatusBadRequest, "用户无法查询", nil)
+		log.Printf("文件句柄打开失败：%s\n", err.Error())
+		return "", errs.NewError(http.StatusInternalServerError, "文件句柄问题", nil)
 	}
+	defer src.Close()
 
-	// 添加数据库存储
-	err = s.r.AddAvatar(user, filename)
+	out, err := os.Create(dst)
 	if err != nil {
-		return "", errs.NewError(http.StatusInternalServerError, "图片存储失败", err)
+		log.Printf("文件创建失败：%s\n", err.Error())
+		return "", errs.NewError(http.StatusInternalServerError, "图片文件创建失败", nil)
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, src)
+	if err != nil {
+		log.Printf("图片数据传输失败：%s\n", err.Error())
+		return "", errs.NewError(http.StatusInternalServerError, "图片数据copy失败", nil)
 	}
 
 	return filename, nil

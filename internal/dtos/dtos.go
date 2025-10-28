@@ -50,9 +50,11 @@ type ProfileResp struct {
 	Avatar   string `json:"avatar"`
 }
 
+type PhotoItem struct {
+	ID  uint   `json:"id"`
+	Img string `json:"name"`
+}
+
 type PhotosResp struct {
-	Photos []struct {
-		ID  uint   `json:"id"`
-		Img string `json:"name"`
-	}
+	Photos []PhotoItem `json:"photos"`
 }
