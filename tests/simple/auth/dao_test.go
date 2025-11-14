@@ -1,4 +1,4 @@
-package simple
+package auth
 
 import (
 	"os"
@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	dao "github.com/Jack-samu/the-blog-backend-gin.git/internal/DAO"
 	"github.com/Jack-samu/the-blog-backend-gin.git/internal/models"
-	"github.com/Jack-samu/the-blog-backend-gin.git/internal/repositories"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
@@ -43,10 +43,11 @@ func createTestImg(is_avatar bool) *models.Img {
 
 // ExistByEmail方法的record not found版测试
 func TestUserExistByEmail(t *testing.T) {
-	db, mock := setupMockDB(t)
+	db, mock, cleanup := setupMockDB(t)
+	defer cleanup()
 	defer verifyMockExpection(t, mock)
 
-	repo := repositories.NewRepository(db)
+	repo := dao.NewRepository(db)
 	user := createTestUser()
 
 	rows := sqlmock.NewRows([]string{"count"}).AddRow(0)
@@ -61,10 +62,11 @@ func TestUserExistByEmail(t *testing.T) {
 
 // ExistByUsername方法的record not found版测试
 func TestUserExistByName(t *testing.T) {
-	db, mock := setupMockDB(t)
+	db, mock, cleanup := setupMockDB(t)
+	defer cleanup()
 	defer verifyMockExpection(t, mock)
 
-	repo := repositories.NewRepository(db)
+	repo := dao.NewRepository(db)
 	user := createTestUser()
 
 	rows := sqlmock.NewRows([]string{"count"}).AddRow(0)
@@ -79,10 +81,11 @@ func TestUserExistByName(t *testing.T) {
 
 // GetUserByNameWithAvatar的没有头像版测试
 func TestGetUserWithoutAvatarByName(t *testing.T) {
-	db, mock := setupMockDB(t)
+	db, mock, cleanup := setupMockDB(t)
+	defer cleanup()
 	defer verifyMockExpection(t, mock)
 
-	repo := repositories.NewRepository(db)
+	repo := dao.NewRepository(db)
 	user := createTestUser()
 
 	rows := sqlmock.NewRows([]string{
@@ -113,10 +116,11 @@ func TestGetUserWithoutAvatarByName(t *testing.T) {
 
 // GetUserByNameWithAvatar的有头像版测试
 func TestGetUserWithAvatarByName(t *testing.T) {
-	db, mock := setupMockDB(t)
+	db, mock, cleanup := setupMockDB(t)
+	defer cleanup()
 	defer verifyMockExpection(t, mock)
 
-	repo := repositories.NewRepository(db)
+	repo := dao.NewRepository(db)
 	user := createTestUser()
 	img := createTestImg(true)
 
@@ -154,10 +158,11 @@ func TestGetUserWithAvatarByName(t *testing.T) {
 
 // GetUserByIdWithAvatar的没有头像版测试
 func TestGetUserWithoutAvatarById(t *testing.T) {
-	db, mock := setupMockDB(t)
+	db, mock, cleanup := setupMockDB(t)
+	defer cleanup()
 	defer verifyMockExpection(t, mock)
 
-	repo := repositories.NewRepository(db)
+	repo := dao.NewRepository(db)
 	user := createTestUser()
 
 	rows := sqlmock.NewRows([]string{
@@ -188,10 +193,11 @@ func TestGetUserWithoutAvatarById(t *testing.T) {
 
 // GetUserByIdWithAvatar的有头像版测试
 func TestGetUserWithAvatarById(t *testing.T) {
-	db, mock := setupMockDB(t)
+	db, mock, cleanup := setupMockDB(t)
+	defer cleanup()
 	defer verifyMockExpection(t, mock)
 
-	repo := repositories.NewRepository(db)
+	repo := dao.NewRepository(db)
 	user := createTestUser()
 	img := createTestImg(true)
 
@@ -228,10 +234,11 @@ func TestGetUserWithAvatarById(t *testing.T) {
 
 // GetUserPosts的测试
 func TestGetUserPosts(t *testing.T) {
-	db, mock := setupMockDB(t)
+	db, mock, cleanup := setupMockDB(t)
+	defer cleanup()
 	defer verifyMockExpection(t, mock)
 
-	repo := repositories.NewRepository(db)
+	repo := dao.NewRepository(db)
 	user := createTestUser()
 
 	rows := sqlmock.NewRows([]string{"count"}).AddRow(0)
@@ -246,10 +253,11 @@ func TestGetUserPosts(t *testing.T) {
 
 // GetUserDrafts的测试
 func TestGetUserDrafts(t *testing.T) {
-	db, mock := setupMockDB(t)
+	db, mock, cleanup := setupMockDB(t)
+	defer cleanup()
 	defer verifyMockExpection(t, mock)
 
-	repo := repositories.NewRepository(db)
+	repo := dao.NewRepository(db)
 	user := createTestUser()
 
 	// 因为预设了结果为0
@@ -265,10 +273,11 @@ func TestGetUserDrafts(t *testing.T) {
 
 // IncreaseCaptchaCnt的测试，改
 func TestIncreaseCaptchaCnt(t *testing.T) {
-	db, mock := setupMockDB(t)
+	db, mock, cleanup := setupMockDB(t)
+	defer cleanup()
 	defer verifyMockExpection(t, mock)
 
-	repo := repositories.NewRepository(db)
+	repo := dao.NewRepository(db)
 	user := createTestUser()
 
 	mock.ExpectBegin()
@@ -284,10 +293,11 @@ func TestIncreaseCaptchaCnt(t *testing.T) {
 
 // IncreaseFailedLogin的测试，改
 func TestIncreaseFailedLogin(t *testing.T) {
-	db, mock := setupMockDB(t)
+	db, mock, cleanup := setupMockDB(t)
+	defer cleanup()
 	defer verifyMockExpection(t, mock)
 
-	repo := repositories.NewRepository(db)
+	repo := dao.NewRepository(db)
 	user := createTestUser()
 
 	mock.ExpectBegin()
@@ -305,10 +315,11 @@ func TestIncreaseFailedLogin(t *testing.T) {
 
 // GetUserPhotos的测试
 func TestGetPhotos(t *testing.T) {
-	db, mock := setupMockDB(t)
+	db, mock, cleanup := setupMockDB(t)
+	defer cleanup()
 	defer verifyMockExpection(t, mock)
 
-	repo := repositories.NewRepository(db)
+	repo := dao.NewRepository(db)
 	user := createTestUser()
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `imgs` WHERE user_id = ?")).
@@ -322,10 +333,11 @@ func TestGetPhotos(t *testing.T) {
 
 // CreateUser的测试，增
 func TestCreateUser(t *testing.T) {
-	db, mock := setupMockDB(t)
+	db, mock, cleanup := setupMockDB(t)
+	defer cleanup()
 	defer verifyMockExpection(t, mock)
 
-	repo := repositories.NewRepository(db)
+	repo := dao.NewRepository(db)
 	user := createTestUser()
 
 	mock.ExpectBegin()
@@ -345,10 +357,11 @@ func TestCreateUser(t *testing.T) {
 
 // GetUserById的测试
 func TestGetUserById(t *testing.T) {
-	db, mock := setupMockDB(t)
+	db, mock, cleanup := setupMockDB(t)
+	defer cleanup()
 	defer verifyMockExpection(t, mock)
 
-	repo := repositories.NewRepository(db)
+	repo := dao.NewRepository(db)
 	user := createTestUser()
 
 	rows := sqlmock.NewRows([]string{
@@ -373,10 +386,11 @@ func TestGetUserById(t *testing.T) {
 
 // GetUserByName的测试
 func TestGetUserByName(t *testing.T) {
-	db, mock := setupMockDB(t)
+	db, mock, cleanup := setupMockDB(t)
+	defer cleanup()
 	defer verifyMockExpection(t, mock)
 
-	repo := repositories.NewRepository(db)
+	repo := dao.NewRepository(db)
 	user := createTestUser()
 
 	rows := sqlmock.NewRows([]string{
@@ -400,10 +414,11 @@ func TestGetUserByName(t *testing.T) {
 
 // SetLastActivity的测试，改
 func TestSetLastAvtivity(t *testing.T) {
-	db, mock := setupMockDB(t)
+	db, mock, cleanup := setupMockDB(t)
+	defer cleanup()
 	defer verifyMockExpection(t, mock)
 
-	repo := repositories.NewRepository(db)
+	repo := dao.NewRepository(db)
 	user := createTestUser()
 
 	mock.ExpectBegin()
@@ -418,10 +433,11 @@ func TestSetLastAvtivity(t *testing.T) {
 
 // SaveImg的普通测试，增
 func TestCreateImg(t *testing.T) {
-	db, mock := setupMockDB(t)
+	db, mock, cleanup := setupMockDB(t)
+	defer cleanup()
 	defer verifyMockExpection(t, mock)
 
-	repo := repositories.NewRepository(db)
+	repo := dao.NewRepository(db)
 	img := createTestImg(false)
 
 	mock.ExpectBegin()
@@ -437,10 +453,11 @@ func TestCreateImg(t *testing.T) {
 
 // SaveImg的头像添加测试，增
 func TestCreateAvatar(t *testing.T) {
-	db, mock := setupMockDB(t)
+	db, mock, cleanup := setupMockDB(t)
+	defer cleanup()
 	defer verifyMockExpection(t, mock)
 
-	repo := repositories.NewRepository(db)
+	repo := dao.NewRepository(db)
 	img := createTestImg(true)
 
 	mock.ExpectBegin()
@@ -456,10 +473,11 @@ func TestCreateAvatar(t *testing.T) {
 
 // GetPhoto的测试
 func TestGetImg(t *testing.T) {
-	db, mock := setupMockDB(t)
+	db, mock, cleanup := setupMockDB(t)
+	defer cleanup()
 	defer verifyMockExpection(t, mock)
 
-	repo := repositories.NewRepository(db)
+	repo := dao.NewRepository(db)
 	img := createTestImg(false)
 
 	rows := sqlmock.NewRows([]string{`id`, `name`, `is_avatar`, `user_id`, "created_at"}).
@@ -477,10 +495,11 @@ func TestGetImg(t *testing.T) {
 
 // DeleteImg的测试，删
 func TestDeleteImg(t *testing.T) {
-	db, mock := setupMockDB(t)
+	db, mock, cleanup := setupMockDB(t)
+	defer cleanup()
 	defer verifyMockExpection(t, mock)
 
-	repo := repositories.NewRepository(db)
+	repo := dao.NewRepository(db)
 	img := createTestImg(false)
 
 	mock.ExpectBegin()

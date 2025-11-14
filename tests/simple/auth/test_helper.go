@@ -1,4 +1,4 @@
-package simple
+package auth
 
 import (
 	"os"
@@ -45,7 +45,7 @@ func teardownTestDB(db *gorm.DB, t *testing.T) {
 }
 
 // 辅助工具部分
-func setupMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock) {
+func setupMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock, func()) {
 	// 添加环境变量读取
 	err := godotenv.Load("../../.env")
 	assert.NoError(t, err)
@@ -58,7 +58,12 @@ func setupMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock) {
 		SkipInitializeWithVersion: true,
 	}), &gorm.Config{})
 	assert.NoError(t, err)
-	return gormDB, mock
+
+	cleanup := func() {
+		defer db.Close()
+	}
+
+	return gormDB, mock, cleanup
 }
 
 func verifyMockExpection(t *testing.T, mock sqlmock.Sqlmock) {

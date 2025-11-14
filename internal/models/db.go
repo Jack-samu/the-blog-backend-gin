@@ -33,8 +33,6 @@ func InitDB() *gorm.DB {
 		&Category{},
 		&Post{},
 		&Draft{},
-		&PostTags{},
-		&DraftTags{},
 		&Img{},
 		&Comment{},
 		&Reply{},

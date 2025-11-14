@@ -14,6 +14,7 @@ func (h *Handler) Register(c *gin.Context) {
 	var req dtos.RegisterReq
 
 	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("%s\n", err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{
 			"err": "请求参数无效" + err.Error(),
 		})
@@ -84,6 +85,7 @@ func (h *Handler) Login(c *gin.Context) {
 	err := c.ShouldBindJSON(&req)
 
 	if err != nil {
+		log.Printf("%s\n", err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{
 			"err": "无效参数",
 		})
@@ -108,17 +110,12 @@ func (h *Handler) Login(c *gin.Context) {
 }
 
 func (h *Handler) Logout(c *gin.Context) {
-	user_id, ok := c.Get("user_id")
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"err": "用户认证环节出错"})
-	}
-
-	val, ok := user_id.(string)
-	if !ok {
+	user_id := c.GetString("user_id")
+	if user_id == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"err": "用户状态信息查询出错，请重试"})
 	}
 
-	last_activity, err := h.s.Logout(val)
+	last_activity, err := h.s.Logout(user_id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"err": "退出出错" + err.Err.Error()})
 	} else {
@@ -127,17 +124,12 @@ func (h *Handler) Logout(c *gin.Context) {
 }
 
 func (h *Handler) RefreshTheToken(c *gin.Context) {
-	user_id, ok := c.Get("user_id")
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"err": "用户认证环节出错"})
-	}
-
-	val, ok := user_id.(string)
-	if !ok {
+	user_id := c.GetString("user_id")
+	if user_id == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"err": "用户状态信息查询出错，请重试"})
 	}
 
-	refreshResp, errs := h.s.RefreshTheToken(val)
+	refreshResp, errs := h.s.RefreshTheToken(user_id)
 	if errs != nil {
 		switch errs.Code {
 		case 400:
@@ -280,6 +272,9 @@ func (h *Handler) GetPhotos(c *gin.Context) {
 func (h *Handler) DeleteImg(c *gin.Context) {
 	id := c.Param("id")
 	user_id := c.GetString("user_id")
+	if user_id == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"err": "用户状态信息查询出错，请重试"})
+	}
 
 	if id == "" {
 		log.Printf("获取用户信息的请求中id为'%s'\n", id)
@@ -302,13 +297,8 @@ func (h *Handler) DeleteImg(c *gin.Context) {
 }
 
 func (h *Handler) SetAvatar(c *gin.Context) {
-	user_id, ok := c.Get("user_id")
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"err": "用户认证环节出错"})
-	}
-
-	val, ok := user_id.(string)
-	if !ok {
+	user_id := c.GetString("user_id")
+	if user_id == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"err": "用户状态信息查询出错，请重试"})
 	}
 
@@ -331,7 +321,7 @@ func (h *Handler) SetAvatar(c *gin.Context) {
 		}
 	}
 
-	filename, errs := h.s.SetAvatar(file, imageType, "images", val)
+	filename, errs := h.s.SetAvatar(file, imageType, "images", user_id)
 	if errs != nil {
 		switch errs.Code {
 		case 400:
@@ -352,13 +342,8 @@ func (h *Handler) SetAvatar(c *gin.Context) {
 
 // UploadImage的路由保护版
 func (h *Handler) UploadImg(c *gin.Context) {
-	user_id, ok := c.Get("user_id")
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"err": "用户认证环节出错"})
-	}
-
-	val, ok := user_id.(string)
-	if !ok {
+	user_id := c.GetString("user_id")
+	if user_id == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"err": "用户状态信息查询出错，请重试"})
 	}
 
@@ -381,7 +366,7 @@ func (h *Handler) UploadImg(c *gin.Context) {
 		}
 	}
 
-	filename, errs := h.s.SaveImgWithUser(file, imageType, "images", val)
+	filename, errs := h.s.SaveImgWithUser(file, imageType, "images", user_id)
 	if errs != nil {
 		switch errs.Code {
 		case 400:

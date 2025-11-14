@@ -1,9 +1,9 @@
-package simple
+package auth
 
 import (
 	"testing"
 
-	"github.com/Jack-samu/the-blog-backend-gin.git/internal/repositories"
+	dao "github.com/Jack-samu/the-blog-backend-gin.git/internal/DAO"
 	"github.com/Jack-samu/the-blog-backend-gin.git/internal/service"
 	"github.com/Jack-samu/the-blog-backend-gin.git/internal/utils"
 	"github.com/stretchr/testify/assert"
@@ -14,7 +14,7 @@ func TestUserServiceWithoutAvatar(t *testing.T) {
 	db := setupTestDB(t)
 	defer teardownTestDB(db, t)
 
-	repo := repositories.NewRepository(db)
+	repo := dao.NewRepository(db)
 	s := service.NewService(repo)
 
 	err := s.Register("test-user", "test@test.com", "test123", "guest what", "")

@@ -5,31 +5,31 @@ import "time"
 type Comment struct {
 	ID        uint      `gorm:"primaryKey;autoIncrement"`
 	Content   string    `gorm:"type:text"`
-	LikeCnt   uint      `gorm:"default:0"`
+	LikeCnt   uint      `gorm:"not null;default:0"`
 	CreatedAt time.Time `gorm:"autoUpdateTime:false;index"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime:milli"`
 
 	// 外键外联
-	PostID  *uint   `gorm:"index"`
+	PostID  uint    `gorm:"index;not null"`
 	Replies []Reply `gorm:"foreignKey:CommentID;constraint:OnDelete:CASCADE"`
 
-	UserID string `gorm:"type:varchar(36);"`
-	User   *User  `gorm:"foreignKey:UserID;constraint:OnDelete:SET NULL"`
+	UserID string `gorm:"type:varchar(36)"`
+	User   User   `gorm:"foreignKey:UserID;constraint:OnDelete:SET NULL"`
 }
 
 type Reply struct {
 	ID        uint      `gorm:"primaryKey;autoIncrement"`
 	Content   string    `gorm:"type:text"`
-	LikeCnt   uint      `gorm:"default:0"`
+	LikeCnt   uint      `gorm:"not null;default:0"`
 	CreatedAt time.Time `gorm:"autoUpdateTime:false;index"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime:milli"`
 
-	// 外键外联，PostID存疑
-	PostID    *uint `gorm:"index"`
-	CommentID *uint `gorm:"index"`
+	// 外键外联
+	CommentID *uint   `gorm:"index;not null"`
+	Comment   Comment `gorm:"foreignKey:CommentID"`
 
 	UserID string `gorm:"type:varchar(36)"`
-	User   *User  `gorm:"foreignKey:UserID;constraint:OnDelete:SET NULL"`
+	User   User   `gorm:"foreignKey:UserID;constraint:OnDelete:SET NULL"`
 
 	// Reply自我关联
 	ParentID *uint   `gorm:"index"`

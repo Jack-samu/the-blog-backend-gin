@@ -1,4 +1,4 @@
-package simple
+package auth
 
 import (
 	"bytes"
@@ -7,10 +7,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	dao "github.com/Jack-samu/the-blog-backend-gin.git/internal/DAO"
 	"github.com/Jack-samu/the-blog-backend-gin.git/internal/dtos"
 	"github.com/Jack-samu/the-blog-backend-gin.git/internal/handler"
 	"github.com/Jack-samu/the-blog-backend-gin.git/internal/middleware"
-	"github.com/Jack-samu/the-blog-backend-gin.git/internal/repositories"
 	"github.com/Jack-samu/the-blog-backend-gin.git/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -35,7 +35,7 @@ func TestUserFlowSimple(t *testing.T) {
 	db := setupTestDB(t)
 	defer teardownTestDB(db, t)
 
-	repo := repositories.NewRepository(db)
+	repo := dao.NewRepository(db)
 	s := service.NewService(repo)
 	h := handler.NewHandler(s)
 	setupRoutes(h, r)

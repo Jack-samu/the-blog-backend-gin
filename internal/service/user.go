@@ -50,6 +50,7 @@ func (s *Service) Register(username, email, password, bio, avatar string) *errs.
 		FailedLogin:   0,
 		CaptchaReqCnt: 0,
 		CreatedAt:     time.Now(),
+		LastActivity:  time.Now(),
 	}
 
 	err = user.SetPassword(password)

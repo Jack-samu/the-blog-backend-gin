@@ -1,15 +1,15 @@
 package service
 
 import (
-	"github.com/Jack-samu/the-blog-backend-gin.git/internal/repositories"
+	dao "github.com/Jack-samu/the-blog-backend-gin.git/internal/DAO"
 	"github.com/Jack-samu/the-blog-backend-gin.git/internal/utils"
 )
 
 type Service struct {
-	r *repositories.Repository
+	r *dao.DAO
 	u *utils.UserReset
 }
 
-func NewService(r *repositories.Repository) *Service {
+func NewService(r *dao.DAO) *Service {
 	return &Service{r: r}
 }
