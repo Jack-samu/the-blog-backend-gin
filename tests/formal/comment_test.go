@@ -3,7 +3,6 @@ package formal
 import (
 	"bytes"
 	"encoding/json"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -14,7 +13,6 @@ import (
 	"github.com/Jack-samu/the-blog-backend-gin.git/internal/models"
 	"github.com/Jack-samu/the-blog-backend-gin.git/internal/service"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -39,10 +37,10 @@ func preparation(s *service.Service, t *testing.T) (string, int) {
 
 func TestComment(t *testing.T) {
 
-	err := godotenv.Load("../../.env")
-	if err != nil {
-		log.Fatal("读取.env失败")
-	}
+	// err := godotenv.Load("../../.env")
+	// if err != nil {
+	// 	log.Fatal("读取.env失败")
+	// }
 
 	r := gin.Default()
 	db := models.InitDB()

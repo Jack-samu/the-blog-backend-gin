@@ -6,7 +6,6 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/Jack-samu/the-blog-backend-gin.git/internal/models"
-	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
@@ -47,8 +46,8 @@ func teardownTestDB(db *gorm.DB, t *testing.T) {
 // 辅助工具部分
 func setupMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock, func()) {
 	// 添加环境变量读取
-	err := godotenv.Load("../../.env")
-	assert.NoError(t, err)
+	// err := godotenv.Load("../../.env")
+	// assert.NoError(t, err)
 
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
