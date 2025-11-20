@@ -16,6 +16,8 @@ func setupRoutes(h *handler.Handler, r *gin.Engine) {
 	r.GET("/articles/:id", h.GetArticle)
 	// 获取分类的所有文章
 	r.GET("/articles/series/:id", h.GetSeries)
+	r.GET("/articles/:id/comments", h.GetComments)
+	r.GET("/articles/:id/replies", h.GetReplies)
 
 	protected := r.Group("")
 	protected.Use(middleware.Auth())
@@ -39,6 +41,14 @@ func setupRoutes(h *handler.Handler, r *gin.Engine) {
 		protected.DELETE("/articles/post/:id", h.DeletePost)
 		// 删除draft
 		protected.DELETE("/articles/draft/:id", h.DeletePost)
+
+		// comment部分
+		protected.POST("/articles/comments", h.CreateComment)
+		protected.POST("/articles/replies", h.CreateReply)
+		protected.POST("/comments/modify", h.ModifyComment)
+		protected.POST("/replies/modify", h.ModifyReply)
+		protected.DELETE("/comments/:id", h.DeleteComment)
+		protected.DELETE("/replies/:id", h.DeleteReply)
 	}
 }
 

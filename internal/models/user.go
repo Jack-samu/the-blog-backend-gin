@@ -13,6 +13,7 @@ type User struct {
 	Email         string `gorm:"unique;not null"`
 	Pwd           string `gorm:"not null"`
 	Bio           string
+	Avatar        string
 	CreatedAt     time.Time `gorm:"autoUpdateTime:false"`
 	UpdatedAt     time.Time `gorm:"autoUpdateTime:milli"`
 	LastActivity  time.Time `gorm:"autoUpdateTime:false"`

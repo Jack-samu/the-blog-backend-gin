@@ -44,12 +44,7 @@ func (s *Service) GetPost(id uint) (*dtos.PostDetailResp, *errs.ErrorResp) {
 		return nil, errs.NewError(http.StatusInternalServerError, "", err)
 	}
 
-	avatar, err := s.r.GetUserAvatar(post.Author.ID)
-	if err != nil {
-		log.Printf("post相关用户信息查询失败：%s\n", err.Error())
-	}
-
-	postDetail := dtos.ToPostDetail(post, avatar)
+	postDetail := dtos.ToPostDetail(post)
 
 	return &dtos.PostDetailResp{
 		Post: postDetail,
@@ -67,12 +62,7 @@ func (s *Service) GetDraft(id uint) (*dtos.DraftDetailResp, *errs.ErrorResp) {
 		return nil, errs.NewError(http.StatusInternalServerError, "", err)
 	}
 
-	avatar, err := s.r.GetUserAvatar(draft.Author.ID)
-	if err != nil {
-		log.Printf("post相关用户信息查询失败：%s\n", err.Error())
-	}
-
-	draftDetail := dtos.ToDraftDetail(draft, avatar)
+	draftDetail := dtos.ToDraftDetail(draft)
 
 	return &dtos.DraftDetailResp{
 		Draft: draftDetail,

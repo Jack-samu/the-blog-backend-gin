@@ -1,12 +1,9 @@
 package dao
 
 import (
-	"database/sql"
-	"errors"
 	"time"
 
 	"github.com/Jack-samu/the-blog-backend-gin.git/internal/models"
-	"gorm.io/gorm"
 )
 
 func (r *DAO) ExistByEmail(email string) (bool, error) {
@@ -25,51 +22,30 @@ func (r *DAO) CreateUser(u *models.User) error {
 	return r.db.Create(u).Error
 }
 
-func (r *DAO) GetUserByNameWithAvatar(username string) (*models.User, string, error) {
+func (r *DAO) GetUserByName(username string) (*models.User, error) {
 	user := &models.User{}
 	err := r.db.Model(&models.User{}).Where("username = ?", username).First(&user).Error
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
-	var avatar string
-	var img models.Img
-	err = r.db.Model(&models.Img{}).
-		Where("user_id = ? AND is_avatar = ?", user.ID, true).
-		First(&img).Error
+	return user, err
+}
+
+func (r *DAO) GetUserById(id string) (*models.User, error) {
+	user := &models.User{}
+	err := r.db.Model(&models.User{}).Where("id = ?", id).First(&user).Error
 	if err != nil {
-		// 头像record not found
-		return user, "", err
-	} else {
-		avatar = img.Name
+		return nil, err
 	}
 
-	return user, avatar, err
+	return user, err
 }
 
 func (r *DAO) IncreaseFailedLogin(u *models.User) error {
 	// u.FailedLogin = u.FailedLogin + 1
 	// return r.db.Save(u).Error
 	return r.db.Model(&u).Update("failed_login", u.FailedLogin+1).Error
-}
-
-func (r *DAO) GetUserByIdWithAvatar(id string) (*models.User, string, error) {
-	user := &models.User{}
-	err := r.db.Model(&models.User{}).Where("id = ?", id).First(&user).Error
-	if err != nil {
-		return nil, "", err
-	}
-
-	var avatar string
-	var img models.Img
-	err = r.db.Model(&models.Img{}).
-		Where("user_id = ? AND is_avatar = ?", user.ID, true).
-		First(&img).Error
-	if err == nil {
-		avatar = img.Name
-	}
-
-	return user, avatar, err
 }
 
 func (r *DAO) IncreaseCaptchaCnt(u *models.User) error {
@@ -94,18 +70,6 @@ func (r *DAO) GetUserPhotos(id string) ([]*models.Img, error) {
 	var imgs []*models.Img
 	err := r.db.Model(&models.Img{}).Where("user_id = ?", id).Find(&imgs).Error
 	return imgs, err
-}
-
-func (r *DAO) GetUserById(userID string) (*models.User, error) {
-	var user *models.User
-	err := r.db.Model(&models.User{}).Where("id = ?", userID).First(&user).Error
-	return user, err
-}
-
-func (r *DAO) GetUserByName(username string) (*models.User, error) {
-	var user *models.User
-	err := r.db.Model(&models.User{}).Where("username = ?", username).First(&user).Error
-	return user, err
 }
 
 func (r *DAO) SetLastActivity(u *models.User) (string, error) {
@@ -133,25 +97,4 @@ func (r *DAO) SaveImg(filename, user_id string, is_avatar bool) error {
 	}
 
 	return r.db.Create(img).Error
-}
-
-func (r *DAO) GetUserAvatar(id string) (string, error) {
-	var avatar sql.NullString
-
-	err := r.db.Model(&models.User{}).
-		Joins("LEFT JOIN imgs ON users.id = imgs.user_id AND imgs.is_avatar = ?", true).
-		Where("users.id = ?", id).Pluck("imgs.name", &avatar).Error
-
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return "", err
-	} else if err != nil {
-		return "", err
-	}
-
-	if avatar.Valid {
-		return avatar.String, nil
-	}
-
-	// 用户存在但没有设置封面
-	return "", nil
 }

@@ -35,3 +35,11 @@ type ArticleReq struct {
 	Category string   `json:"category,omitempty"`
 	Tags     []string `json:"tags,omitempty"`
 }
+
+type CommentReq struct {
+	ReplyID   uint   `json:"id,omitempty"`
+	Content   string `json:"content"`
+	ArticleID int64  `json:"article_id,omitempty"`
+	CommentID int64  `json:"comment_id,omitempty"`
+	ParentID  uint   `json:"parent_id,omitempty"`
+}

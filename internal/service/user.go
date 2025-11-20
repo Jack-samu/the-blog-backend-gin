@@ -47,6 +47,7 @@ func (s *Service) Register(username, email, password, bio, avatar string) *errs.
 		Username:      username,
 		Email:         email,
 		Bio:           bio,
+		Avatar:        avatar,
 		FailedLogin:   0,
 		CaptchaReqCnt: 0,
 		CreatedAt:     time.Now(),
@@ -79,7 +80,7 @@ func (s *Service) Register(username, email, password, bio, avatar string) *errs.
 func (s *Service) Login(username, password string) (*dtos.LoginResp, *errs.ErrorResp) {
 
 	// 用户查询
-	user, avatar, err := s.r.GetUserByNameWithAvatar(username)
+	user, err := s.r.GetUserByName(username)
 	if err != nil && user == nil {
 		log.Printf("用户查询出错：%s\n", err.Error())
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -128,7 +129,7 @@ func (s *Service) Login(username, password string) (*dtos.LoginResp, *errs.Error
 			ID:       user.ID,
 			Username: user.Username,
 			Email:    user.Email,
-			Avatar:   avatar,
+			Avatar:   user.Avatar,
 			Posts:    posts,
 		},
 	}, nil
@@ -136,7 +137,7 @@ func (s *Service) Login(username, password string) (*dtos.LoginResp, *errs.Error
 
 func (s *Service) RefreshTheToken(id string) (*dtos.RefreshResp, *errs.ErrorResp) {
 	// 查询用户是否存在
-	user, avatar, err := s.r.GetUserByIdWithAvatar(id)
+	user, err := s.r.GetUserById(id)
 	if err != nil && user == nil {
 		log.Printf("用户查询出错：%s\n", err.Error())
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -163,7 +164,7 @@ func (s *Service) RefreshTheToken(id string) (*dtos.RefreshResp, *errs.ErrorResp
 			ID:       user.ID,
 			Username: user.Username,
 			Email:    user.Email,
-			Avatar:   avatar,
+			Avatar:   user.Avatar,
 			Posts:    posts,
 		},
 	}, nil
@@ -311,7 +312,7 @@ func (s *Service) Logout(id string) (string, *errs.ErrorResp) {
 }
 
 func (s *Service) Profile(id string) (*dtos.ProfileResp, *errs.ErrorResp) {
-	user, avatar, err := s.r.GetUserByIdWithAvatar(id)
+	user, err := s.r.GetUserById(id)
 	if err != nil && user == nil {
 		log.Printf("用户查询出错：%s\n", err.Error())
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -338,7 +339,7 @@ func (s *Service) Profile(id string) (*dtos.ProfileResp, *errs.ErrorResp) {
 		Email:    user.Email,
 		Articles: posts,
 		Drafts:   drafts,
-		Avatar:   avatar,
+		Avatar:   user.Avatar,
 	}, nil
 }
 

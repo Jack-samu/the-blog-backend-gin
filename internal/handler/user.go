@@ -292,7 +292,7 @@ func (h *Handler) DeleteImg(c *gin.Context) {
 	if errs != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"err": errs.Err.Error()})
 	} else {
-		c.JSON(http.StatusAccepted, gin.H{"msg": "文件已删除"})
+		c.JSON(http.StatusCreated, gin.H{"msg": "文件已删除"})
 	}
 }
 

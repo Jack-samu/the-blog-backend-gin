@@ -63,11 +63,6 @@ type PostDetailItem struct {
 	Content string        `json:"content"`
 }
 
-// 对于响应的构造可能需要一定的json定义
-type CommentItem struct {
-	//
-}
-
 type PostListResp struct {
 	Posts       []PostListItem `json:"articles"`
 	Cnt         uint           `json:"total"`
@@ -127,6 +122,46 @@ type AuthorProfile struct {
 	ID       string `json:"id"`
 	Username string `json:"username"`
 	Avatar   string `json:"avatar"`
+}
+
+type CommentsResp struct {
+	Total    int           `json:"total"`
+	Comments []CommentItem `json:"comments"`
+}
+
+type CommentResp struct {
+	Comment CommentItem `json:"comment"`
+}
+
+type CommentItem struct {
+	ID        uint          `json:"id"`
+	Content   string        `json:"content"`
+	UpdatedAt string        `json:"updated_at"`
+	LikeCnt   uint          `json:"likes"`
+	Liked     bool          `json:"is_liked"`
+	PostID    uint          `json:"post_id"`
+	Commenter AuthorProfile `json:"user"`
+	Replies   int           `json:"replies"`
+}
+
+type RepliesResp struct {
+	Total   int         `json:"total"`
+	Replies []ReplyItem `json:"replies"`
+}
+
+type ReplyResp struct {
+	Reply ReplyItem `json:"reply"`
+}
+
+type ReplyItem struct {
+	ID        uint          `json:"id"`
+	Content   string        `json:"content"`
+	UpdatedAt string        `json:"updated_at"`
+	LikeCnt   uint          `json:"likes"`
+	Liked     bool          `json:"is_liked"`
+	Commenter AuthorProfile `json:"user"`
+	CommentID uint          `json:"comment_id"`
+	ParentID  uint          `json:"parent_id"`
 }
 
 func NewPostList(list []PostListItem, total, page int64) *PostListResp {

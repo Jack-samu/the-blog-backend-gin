@@ -3,6 +3,7 @@ package dtos
 import (
 	"log"
 
+	dao "github.com/Jack-samu/the-blog-backend-gin.git/internal/DAO"
 	"github.com/Jack-samu/the-blog-backend-gin.git/internal/models"
 )
 
@@ -66,7 +67,7 @@ func ToDraftsItem(draft *models.Draft) DraftItem {
 	return d
 }
 
-func ToPostDetail(post *models.Post, avatar string) PostDetailItem {
+func ToPostDetail(post *models.Post) PostDetailItem {
 	p := PostDetailItem{
 		PostListItem: PostListItem{
 			ArticleBasic: ArticleBasic{
@@ -84,7 +85,7 @@ func ToPostDetail(post *models.Post, avatar string) PostDetailItem {
 		Author: AuthorProfile{
 			ID:       post.Author.ID,
 			Username: post.Author.Username,
-			Avatar:   avatar,
+			Avatar:   post.Author.Avatar,
 		},
 		Content: post.Content,
 	}
@@ -103,7 +104,7 @@ func ToPostDetail(post *models.Post, avatar string) PostDetailItem {
 	return p
 }
 
-func ToDraftDetail(draft *models.Draft, avatar string) DraftDetail {
+func ToDraftDetail(draft *models.Draft) DraftDetail {
 	d := DraftDetail{
 		ArticleBasic: ArticleBasic{
 			Id:        draft.ID,
@@ -117,7 +118,7 @@ func ToDraftDetail(draft *models.Draft, avatar string) DraftDetail {
 		Author: AuthorProfile{
 			ID:       draft.Author.ID,
 			Username: draft.Author.Username,
-			Avatar:   avatar,
+			Avatar:   draft.Author.Avatar,
 		},
 	}
 
@@ -154,4 +155,95 @@ func ToDraftList(drafts []models.Draft) []DraftItem {
 	}
 
 	return list
+}
+
+func ToCommentsResp(comments []*models.Comment, r *dao.DAO) *CommentsResp {
+	resp := &CommentsResp{
+		Total: len(comments),
+	}
+	resp.Comments = make([]CommentItem, len(comments))
+	for i := range comments {
+		resp.Comments[i] = ToCommentItem(comments[i], nil, r)
+	}
+
+	return resp
+}
+
+func ToCommentItem(comment *models.Comment, user *models.User, r *dao.DAO) CommentItem {
+	if user == nil {
+		user = &comment.User
+	}
+
+	c := CommentItem{
+		ID:        comment.ID,
+		Content:   comment.Content,
+		LikeCnt:   comment.LikeCnt,
+		UpdatedAt: comment.UpdatedAt.GoString(),
+		PostID:    comment.PostID,
+		Replies:   len(comment.Replies),
+		Commenter: AuthorProfile{
+			ID:       user.ID,
+			Username: user.Username,
+			Avatar:   user.Avatar,
+		},
+		Liked: false,
+	}
+
+	if r != nil {
+		// 直接查询
+		isLiked, err := r.IsLiked(comment.UserID, "comment", comment.ID)
+		if err != nil {
+			c.Liked = false
+			return c
+		}
+		c.Liked = isLiked
+	}
+
+	return c
+}
+
+func ToRepliesResp(replies []*models.Reply, r *dao.DAO) *RepliesResp {
+
+	resp := &RepliesResp{
+		Total: len(replies),
+	}
+
+	resp.Replies = make([]ReplyItem, len(replies))
+	for i := range replies {
+		resp.Replies[i] = ToReplyItem(replies[i], nil, r)
+	}
+
+	return resp
+}
+
+func ToReplyItem(reply *models.Reply, user *models.User, r *dao.DAO) ReplyItem {
+	if user == nil {
+		user = &reply.User
+	}
+
+	replyItem := ReplyItem{
+		ID:        reply.ID,
+		Content:   reply.Content,
+		LikeCnt:   reply.LikeCnt,
+		UpdatedAt: reply.UpdatedAt.GoString(),
+		CommentID: reply.CommentID,
+		Commenter: AuthorProfile{
+			ID:       user.ID,
+			Username: user.Username,
+			Avatar:   user.Avatar,
+		},
+		Liked: false,
+	}
+
+	if r != nil {
+		// 直接查询
+		isLiked, err := r.IsLiked(reply.UserID, "reply", reply.ID)
+		if err != nil {
+			replyItem.Liked = false
+			return replyItem
+		}
+		replyItem.Liked = isLiked
+	}
+
+	return replyItem
 }

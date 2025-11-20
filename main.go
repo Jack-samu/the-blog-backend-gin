@@ -58,6 +58,8 @@ func main() {
 
 	// 路由注册
 	r.POST("/upload-img", handler.UploadImage)
+	r.GET("/articles/:id/comments", handler.GetComments)
+	r.GET("/articles/:id/replies", handler.GetReplies)
 	auth := r.Group("/auth")
 	{
 		auth.POST("/register", handler.Register)
@@ -91,6 +93,14 @@ func main() {
 		protected.POST("/articles/save", handler.SaveDraft)
 		protected.DELETE("/articles/post/:id", handler.DeletePost)
 		protected.DELETE("/articles/draft/:id", handler.DeletePost)
+
+		// comment部分
+		protected.POST("/articles/comments", handler.CreateComment)
+		protected.POST("/articles/replies", handler.CreateReply)
+		protected.POST("/comments/modify", handler.ModifyComment)
+		protected.POST("/replies/modify", handler.ModifyReply)
+		protected.DELETE("/comments/:id", handler.DeleteComment)
+		protected.DELETE("/replies/:id", handler.DeleteReply)
 	}
 
 	// http://localhost:8080/img1.png
