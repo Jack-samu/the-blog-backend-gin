@@ -1,4 +1,4 @@
-name Gin Backend Test
+name: Gin Backend Test
 
 on:
   push:
@@ -33,8 +33,8 @@ jobs:
       with:
         go-version: '1.24'
 
-	  - name: Check out code
-	    uses: atcions/checkout@v2
+    - name: Check out code
+      uses: actions/checkout@v2
 		
     - name: Install dependencies
       run: go mod download
