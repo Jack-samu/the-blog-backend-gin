@@ -59,9 +59,9 @@ jobs:
         MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
         MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
         MAIL_PORT: ${{secrets.MAIL_PORT}}
-        MYSQL_USER: 'guest'
-        MYSQL_PWD: 'Guest123@'
-        MYSQL_HOST: 'localhost'
-        MYSQL_PORT: 3306
-        MYSQL_DATABASE: 'course'
+        DB_USER: 'guest'
+        DB_PASSWORD: 'Guest123@'
+        DB_HOST: 'localhost'
+        DB_PORT: 3306
+        DB_DATABASE: 'course'
       run: go test -v ./...
