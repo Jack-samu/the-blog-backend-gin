@@ -59,6 +59,7 @@ jobs:
         MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
         MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
         MAIL_PORT: ${{secrets.MAIL_PORT}}
+        TEST_MAIN: ${{secrets.TEST_MAIN}}
         DB_USER: 'guest'
         DB_PASSWORD: 'Guest123@'
         DB_HOST: 'localhost'
